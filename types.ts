@@ -1,7 +1,4 @@
 
-
-
-
 export interface User {
   id: string;
   fullName: string;
@@ -227,4 +224,12 @@ export interface Invoice {
   payments: number;
   amountDue: number;
   paymentDetails: string;
+}
+
+export interface AddedResource {
+    id: string; // Unique ID for the table row
+    productId: 'posta' | 'cloudedge' | string;
+    packageId: string;
+    organizationId: string;
+    domainIds: string[];
 }

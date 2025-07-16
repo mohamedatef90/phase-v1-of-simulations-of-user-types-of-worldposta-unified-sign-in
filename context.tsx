@@ -1,11 +1,10 @@
 
 
-
 import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { User, AuthContextType } from './types';
-import { MOCK_USERS } from './data';
-import { Icon } from './ui';
+import type { User, AuthContextType } from '@/types';
+import { MOCK_USERS } from '@/data';
+import { Icon } from '@/components/ui';
 
 // --- Auth Context ---
 const AuthContext = createContext<AuthContextType | null>(null);

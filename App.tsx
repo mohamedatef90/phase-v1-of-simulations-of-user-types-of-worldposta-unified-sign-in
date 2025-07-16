@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, Outlet } from 'react-router-dom';
-import { AuthProvider, ThemeProvider, useAuth, AppLayoutContext } from './context';
-import type { User, AuthContextType, NavItem, UserGroup, ApplicationCardData } from './types';
-import { Navbar, Sidebar, Spinner, Breadcrumbs, Footer, Icon, FloatingAppLauncher } from './ui'; 
+import { AuthProvider, ThemeProvider, useAuth, AppLayoutContext } from '@/context';
+import type { User, AuthContextType, NavItem, UserGroup, ApplicationCardData } from '@/types';
+import { Navbar, Sidebar, Spinner, Breadcrumbs, Footer, Icon, FloatingAppLauncher } from '@/components/ui'; 
 import { 
     LandingPage, 
     LoginPage, 
@@ -36,9 +36,9 @@ import {
     AllNotificationsPage,
     CloudEdgeLayout,
     CloudEdgeDashboardPage,
-} from './views';
-import EmailAdminSubscriptionsPage from './EmailAdminSubscriptionsPage';
-import CloudEdgeConfigurationsPage from './CloudEdgeConfigurationsPage';
+    EmailAdminSubscriptionsPage,
+    CloudEdgeConfigurationsPage
+} from '@/pages';
 
 
 const ProtectedRoute: React.FC<{
