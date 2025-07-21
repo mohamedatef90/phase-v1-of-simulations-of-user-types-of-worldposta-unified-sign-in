@@ -15,12 +15,6 @@ const emailPlans: EmailPlan[] = PLANS.map(p => ({
   isRecommended: p.isRecommended
 }));
 
-const mockRegions = [
-  { id: 'us-east-1', name: 'US East (N. Virginia)' },
-  { id: 'us-west-2', name: 'US West (Oregon)' },
-  { id: 'eu-central-1', name: 'EU (Frankfurt)' },
-];
-
 const ADVANCED_RULES_PRICE_MONTHLY = 2.00;
 
 // Represents a single configured plan in the order
@@ -30,7 +24,6 @@ interface ConfiguredPlan {
   subscriptionTerm: number;
   subscriptionUnit: EmailPlanDuration;
   advancedRulesEnabled: boolean;
-  region: string;
 }
 
 // Calculate total price for the entire order
@@ -40,7 +33,7 @@ const calculateOrderTotal = (configuredPlans: ConfiguredPlan[]): number => {
     if (!planDetails) return total;
 
     let monthlyPricePerUnit = planDetails.basePriceMonthly;
-    if (configuredPlan.advancedRulesEnabled) {
+    if (configuredPlan.advancedRulesEnabled && !['light', 'business'].includes(planDetails.id)) {
       monthlyPricePerUnit += ADVANCED_RULES_PRICE_MONTHLY;
     }
 
@@ -52,8 +45,8 @@ const calculateOrderTotal = (configuredPlans: ConfiguredPlan[]): number => {
         planTotal = monthlyPricePerUnit * configuredPlan.quantity * term;
         break;
       case 'yearly':
-        // Apply 10% discount for yearly, and multiply by term (number of years)
-        planTotal = (monthlyPricePerUnit * 12 * configuredPlan.quantity * term) * 0.90; 
+        // Apply 17% discount for yearly, and multiply by term (number of years)
+        planTotal = (monthlyPricePerUnit * 12 * configuredPlan.quantity * term) * 0.83; 
         break;
     }
     return total + planTotal;
@@ -107,40 +100,7 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan, currentConfig, onPlanChange }
          <></>
       </CollapsibleSection>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-        <FormField
-          id={`${plan.id}-subscription-term`}
-          label="Subscription Term"
-          type="number"
-          value={currentConfig.subscriptionTerm}
-          onChange={(e) => {
-            const val = parseInt(e.target.value, 10);
-            handleUpdate({ subscriptionTerm: isNaN(val) || val < 1 ? 1 : val });
-          }}
-          min={1}
-          inputClassName="w-full text-sm py-2"
-        />
-        <FormField
-          id={`${plan.id}-subscription-unit`}
-          label="Subscription Unit"
-          as="select"
-          value={currentConfig.subscriptionUnit}
-          onChange={(e) => handleUpdate({ subscriptionUnit: e.target.value as EmailPlanDuration })}
-          inputClassName="w-full text-sm py-2"
-        >
-          <option value="monthly">Monthly</option>
-          <option value="yearly">Yearly (10% Off)</option>
-        </FormField>
-         <FormField
-          id={`${plan.id}-region`}
-          label="Region"
-          as="select"
-          value={currentConfig.region}
-          onChange={(e) => handleUpdate({ region: e.target.value })}
-          inputClassName="w-full text-sm py-2"
-        >
-          {mockRegions.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-        </FormField>
+      <div className="mb-4">
         <FormField
           id={`${plan.id}-quantity`}
           label="Quantity"
@@ -151,18 +111,20 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan, currentConfig, onPlanChange }
             handleUpdate({ quantity: isNaN(val) || val < 0 ? 0 : val });
           }}
           min={0}
-          inputClassName="w-full text-sm py-2" 
+          inputClassName="w-28 text-sm py-2" 
         />
       </div>
       
-      <FormField
-        type="checkbox"
-        id={`${plan.id}-advanced-rules`}
-        label={`Advanced Rules Engine (+$${ADVANCED_RULES_PRICE_MONTHLY.toFixed(2)}/mo)`}
-        checked={currentConfig.advancedRulesEnabled}
-        onChange={(e) => handleUpdate({ advancedRulesEnabled: (e.target as HTMLInputElement).checked })}
-        labelClassName="text-sm"
-      />
+      {!['light', 'business'].includes(plan.id) && (
+        <FormField
+            type="checkbox"
+            id={`${plan.id}-advanced-rules`}
+            label={`Advanced Rules Engine (+$${ADVANCED_RULES_PRICE_MONTHLY.toFixed(2)}/mo)`}
+            checked={currentConfig.advancedRulesEnabled}
+            onChange={(e) => handleUpdate({ advancedRulesEnabled: (e.target as HTMLInputElement).checked })}
+            labelClassName="text-sm"
+        />
+      )}
     </Card>
   );
 };
@@ -172,12 +134,48 @@ interface SubscriptionSummaryCardProps {
   totalAmount: number;
   onProceed: () => void;
   isProceedDisabled: boolean;
+  globalSubscriptionTerm: number;
+  setGlobalSubscriptionTerm: (value: number) => void;
+  globalSubscriptionUnit: EmailPlanDuration;
+  setGlobalSubscriptionUnit: (value: EmailPlanDuration) => void;
 }
 
-const SubscriptionSummaryCard: React.FC<SubscriptionSummaryCardProps> = ({ order, totalAmount, onProceed, isProceedDisabled }) => {
+const SubscriptionSummaryCard: React.FC<SubscriptionSummaryCardProps> = ({ 
+  order, totalAmount, onProceed, isProceedDisabled, 
+  globalSubscriptionTerm, setGlobalSubscriptionTerm, globalSubscriptionUnit, setGlobalSubscriptionUnit 
+}) => {
   return (
-    <Card title="Posta Subscription Summary" className="sticky top-20">
-      <div className="border-b border-gray-300 dark:border-gray-600 pb-3 mb-3 min-h-[50px]">
+    <Card title="Your Order" className="sticky top-20">
+      <div className="border-b border-gray-300 dark:border-gray-600 pb-4 mb-4">
+        <h4 className="text-md font-semibold text-[#293c51] dark:text-gray-200 mb-2">Billing Cycle</h4>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">This will apply to all items in your order.</p>
+        <div className="grid grid-cols-2 gap-4">
+            <FormField
+                id="global-subscription-term"
+                label="Term"
+                type="number"
+                value={globalSubscriptionTerm}
+                onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    setGlobalSubscriptionTerm(isNaN(val) || val < 1 ? 1 : val);
+                }}
+                min={1}
+            />
+            <FormField
+                id="global-subscription-unit"
+                label="Unit"
+                as="select"
+                value={globalSubscriptionUnit}
+                onChange={(e) => setGlobalSubscriptionUnit(e.target.value as EmailPlanDuration)}
+            >
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly (17% Off)</option>
+            </FormField>
+        </div>
+      </div>
+      
+      <h4 className="text-md font-semibold text-[#293c51] dark:text-gray-200 mb-2">Summary</h4>
+      <div className="mb-3 min-h-[50px]">
         {order.length === 0 || order.every(item => item.quantity === 0) ? (
           <p className="text-gray-500 dark:text-gray-400 text-sm">No Posta items selected yet.</p>
         ) : (
@@ -187,10 +185,9 @@ const SubscriptionSummaryCard: React.FC<SubscriptionSummaryCardProps> = ({ order
               if (!planDetails) return null;
               return (
                 <li key={item.planId} className="text-sm text-gray-700 dark:text-gray-300">
-                    <div>{planDetails.name} x {item.quantity} ({item.subscriptionTerm} {item.subscriptionUnit})</div>
+                    <div>{planDetails.name} x {item.quantity}</div>
                     <div className="text-xs text-gray-500 dark:text-gray-400">
-                        Region: {mockRegions.find(r => r.id === item.region)?.name}
-                        {item.advancedRulesEnabled && " / Adv. Rules"}
+                        {item.advancedRulesEnabled && !['light', 'business'].includes(planDetails.id) && "Advanced Rules"}
                     </div>
                 </li>
               );
@@ -201,7 +198,7 @@ const SubscriptionSummaryCard: React.FC<SubscriptionSummaryCardProps> = ({ order
       
       <div className="border-t border-[#679a41]/50 dark:border-emerald-500/50 pt-3 mt-3">
         <div className="flex justify-between items-center mb-4">
-          <span className="text-lg font-semibold text-[#293c51] dark:text-gray-100">Total for Posta:</span>
+          <span className="text-lg font-semibold text-[#293c51] dark:text-gray-100">Total:</span>
           <span className="text-xl font-bold text-[#679a41] dark:text-emerald-400">${totalAmount.toFixed(2)}</span>
         </div>
         <Button onClick={onProceed} fullWidth disabled={isProceedDisabled}>
@@ -245,7 +242,7 @@ const PaymentStep: React.FC<{
                                 <li key={item.planId} className="flex justify-between items-start text-sm">
                                     <div>
                                         <p className="font-medium text-[#293c51] dark:text-gray-200">{planDetails.name} x {item.quantity}</p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">{item.subscriptionTerm} {item.subscriptionUnit} | {mockRegions.find(r => r.id === item.region)?.name}</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">{item.subscriptionTerm} {item.subscriptionUnit}</p>
                                     </div>
                                     <p className="font-semibold text-gray-700 dark:text-gray-300">${(calculateOrderTotal([item])).toFixed(2)}</p>
                                 </li>
@@ -314,7 +311,10 @@ export const EmailAdminSubscriptionsPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [currentStep, setCurrentStep] = useState(0);
-  // Stores configuration for all plans, even if quantity is 0
+
+  const [globalSubscriptionTerm, setGlobalSubscriptionTerm] = useState(1);
+  const [globalSubscriptionUnit, setGlobalSubscriptionUnit] = useState<EmailPlanDuration>('monthly');
+
   const [orderConfiguration, setOrderConfiguration] = useState<ConfiguredPlan[]>(
     emailPlans.map(plan => ({
       planId: plan.id,
@@ -322,7 +322,6 @@ export const EmailAdminSubscriptionsPage: React.FC = () => {
       subscriptionTerm: 1,
       subscriptionUnit: 'monthly',
       advancedRulesEnabled: false,
-      region: mockRegions[0].id,
     }))
   );
 
@@ -331,19 +330,26 @@ export const EmailAdminSubscriptionsPage: React.FC = () => {
     const cycleFromUrl = searchParams.get('cycle');
 
     if (planIdFromUrl && emailPlans.some(p => p.id === planIdFromUrl)) {
+      const newUnit = cycleFromUrl === 'annually' ? 'yearly' : 'monthly';
+      setGlobalSubscriptionUnit(newUnit);
+
       setOrderConfiguration(prevConfigs =>
         prevConfigs.map(config =>
           config.planId === planIdFromUrl
-            ? {
-                ...config,
-                quantity: 1,
-                subscriptionUnit: cycleFromUrl === 'annually' ? 'yearly' : 'monthly',
-              }
+            ? { ...config, quantity: 1, subscriptionUnit: newUnit }
             : { ...config, quantity: 0 }
         )
       );
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    setOrderConfiguration(prev => prev.map(config => ({
+      ...config,
+      subscriptionTerm: globalSubscriptionTerm,
+      subscriptionUnit: globalSubscriptionUnit
+    })));
+  }, [globalSubscriptionTerm, globalSubscriptionUnit]);
 
   const handlePlanChange = useCallback((changedConfig: ConfiguredPlan) => {
     setOrderConfiguration(prevConfigs => 
@@ -384,7 +390,7 @@ export const EmailAdminSubscriptionsPage: React.FC = () => {
       </div>
       
       {currentStep === 0 && (
-        <div className="flex flex-col lg:flex-row gap-6 mt-6">
+        <div className="flex flex-col lg:flex-row gap-6">
             <div className="lg:w-3/5 space-y-6">
                 <div className="flex justify-between items-center">
                     <h2 className="text-2xl font-semibold text-[#293c51] dark:text-gray-100">Available Posta Plans</h2>
@@ -409,6 +415,10 @@ export const EmailAdminSubscriptionsPage: React.FC = () => {
                     totalAmount={currentOrderTotal}
                     onProceed={() => setCurrentStep(1)}
                     isProceedDisabled={isOrderProceedDisabled}
+                    globalSubscriptionTerm={globalSubscriptionTerm}
+                    setGlobalSubscriptionTerm={setGlobalSubscriptionTerm}
+                    globalSubscriptionUnit={globalSubscriptionUnit}
+                    setGlobalSubscriptionUnit={setGlobalSubscriptionUnit}
                 />
             </div>
         </div>
