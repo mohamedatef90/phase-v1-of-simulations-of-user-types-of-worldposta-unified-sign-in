@@ -1,14 +1,19 @@
 
+
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button, Card, FormField, CollapsibleSection, Stepper, Icon, Spinner } from '@/components/ui'; 
 import type { EmailPlan, EmailPlanDuration } from '@/types';
+import { PLANS } from '../pricing/constants';
 
-const mockEmailPlans: EmailPlan[] = [
-  { id: 'basic', name: 'Posta Basic', basePriceMonthly: 5, features: ['10GB Mailbox', 'Anti-spam & Anti-virus', 'Webmail Access', 'Calendar & Contacts', 'IMAP/POP3 Support', 'Basic Support'], description: 'Ideal for personal use or small teams.' },
-  { id: 'standard', name: 'Posta Standard', basePriceMonthly: 10, features: ['25GB Mailbox', 'Anti-spam & Anti-virus', 'Advanced Phishing Protection', 'Webmail & Desktop Client Access', 'Shared Calendars', 'Mobile Sync (ActiveSync)', 'Standard Support'], description: 'Perfect for growing businesses.' },
-  { id: 'premium', name: 'Posta Premium', basePriceMonthly: 20, features: ['50GB Mailbox', 'Premium Security Suite (ATP)', 'AI-Powered Spam Filtering', 'Full Client Access & Mobile Sync', 'Advanced Collaboration Tools', 'Email Archiving (1 Year)', 'Priority Support'], description: 'For enterprises needing top-tier features.' },
-];
+const emailPlans: EmailPlan[] = PLANS.map(p => ({
+  id: p.id,
+  name: p.name,
+  basePriceMonthly: p.priceMonthly,
+  features: p.features,
+  description: p.description,
+  isRecommended: p.isRecommended
+}));
 
 const mockRegions = [
   { id: 'us-east-1', name: 'US East (N. Virginia)' },
@@ -31,7 +36,7 @@ interface ConfiguredPlan {
 // Calculate total price for the entire order
 const calculateOrderTotal = (configuredPlans: ConfiguredPlan[]): number => {
   return configuredPlans.reduce((total, configuredPlan) => {
-    const planDetails = mockEmailPlans.find(p => p.id === configuredPlan.planId);
+    const planDetails = emailPlans.find(p => p.id === configuredPlan.planId);
     if (!planDetails) return total;
 
     let monthlyPricePerUnit = planDetails.basePriceMonthly;
@@ -58,40 +63,42 @@ const calculateOrderTotal = (configuredPlans: ConfiguredPlan[]): number => {
 
 interface PlanCardProps {
   plan: EmailPlan;
-  currentConfig: ConfiguredPlan | undefined; // Current configuration for this plan from the parent
+  currentConfig: ConfiguredPlan;
   onPlanChange: (planConfig: ConfiguredPlan) => void;
 }
 
-const PlanCardInternal: React.FC<PlanCardProps> = ({ plan, currentConfig, onPlanChange }) => {
-  const [quantity, setQuantity] = useState(currentConfig?.quantity || 0); // Default to 0 if not configured
-  const [subscriptionTerm, setSubscriptionTerm] = useState(currentConfig?.subscriptionTerm || 1);
-  const [subscriptionUnit, setSubscriptionUnit] = useState<EmailPlanDuration>(currentConfig?.subscriptionUnit ||'monthly');
-  const [advancedRulesEnabled, setAdvancedRulesEnabled] = useState(currentConfig?.advancedRulesEnabled || false);
-  const [region, setRegion] = useState<string>(currentConfig?.region || mockRegions[0].id);
+const PlanCard: React.FC<PlanCardProps> = ({ plan, currentConfig, onPlanChange }) => {
+  const descriptiveFeature = plan.features.find(f => f.startsWith('Everything in'));
+  const regularFeatures = plan.features.filter(f => !f.startsWith('Everything in'));
 
-  // Update parent when local state changes
-  useEffect(() => {
-    onPlanChange({ planId: plan.id, quantity, subscriptionTerm, subscriptionUnit, advancedRulesEnabled, region });
-  }, [plan.id, quantity, subscriptionTerm, subscriptionUnit, advancedRulesEnabled, region, onPlanChange]);
-
-  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const val = parseInt(e.target.value, 10);
-    setQuantity(isNaN(val) || val < 0 ? 0 : val); // Allow 0 to "deselect"
+  const handleUpdate = (update: Partial<ConfiguredPlan>) => {
+    onPlanChange({ ...currentConfig, ...update });
   };
 
-  const handleSubscriptionTermChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const val = parseInt(e.target.value, 10);
-    setSubscriptionTerm(isNaN(val) || val < 1 ? 1 : val);
-  };
+  const isSelected = currentConfig.quantity > 0;
 
   return (
-    <Card className="flex flex-col h-full border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow">
-      <h3 className="text-xl font-semibold text-[#293c51] dark:text-gray-100 mb-1">
+    <Card className={`relative flex flex-col h-full border ${isSelected ? 'border-2 border-[#679a41] dark:border-emerald-500' : (plan.isRecommended ? 'border-2 border-gray-300 dark:border-gray-600' : 'border-gray-200 dark:border-gray-700')} hover:shadow-lg transition-shadow`}>
+       {isSelected && (
+          <div className="absolute top-0 -translate-y-1/2 left-6 px-3 py-1 text-xs font-semibold tracking-wider text-white uppercase bg-[#679a41] dark:bg-emerald-500 rounded-full z-10">
+            Selected
+          </div>
+      )}
+      {plan.isRecommended && !isSelected && (
+          <div className="absolute top-0 -translate-y-1/2 left-6 px-3 py-1 text-xs font-semibold tracking-wider text-white uppercase bg-gray-500 dark:bg-gray-400 rounded-full z-10">
+            Recommended
+          </div>
+      )}
+      <h3 className="text-xl font-semibold text-[#293c51] dark:text-gray-100 mb-1 mt-2">
         {plan.name} - ${plan.basePriceMonthly.toFixed(2)}/mo
       </h3>
       
+      {descriptiveFeature && (
+        <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">{descriptiveFeature}</p>
+      )}
+
       <CollapsibleSection 
-        items={plan.features} 
+        items={regularFeatures} 
         maxItemsToShow={3} 
         className="mb-4 text-sm"
         itemClassName="text-sm text-gray-500 dark:text-gray-400"
@@ -105,8 +112,11 @@ const PlanCardInternal: React.FC<PlanCardProps> = ({ plan, currentConfig, onPlan
           id={`${plan.id}-subscription-term`}
           label="Subscription Term"
           type="number"
-          value={subscriptionTerm}
-          onChange={handleSubscriptionTermChange}
+          value={currentConfig.subscriptionTerm}
+          onChange={(e) => {
+            const val = parseInt(e.target.value, 10);
+            handleUpdate({ subscriptionTerm: isNaN(val) || val < 1 ? 1 : val });
+          }}
           min={1}
           inputClassName="w-full text-sm py-2"
         />
@@ -114,8 +124,8 @@ const PlanCardInternal: React.FC<PlanCardProps> = ({ plan, currentConfig, onPlan
           id={`${plan.id}-subscription-unit`}
           label="Subscription Unit"
           as="select"
-          value={subscriptionUnit}
-          onChange={(e) => setSubscriptionUnit(e.target.value as EmailPlanDuration)}
+          value={currentConfig.subscriptionUnit}
+          onChange={(e) => handleUpdate({ subscriptionUnit: e.target.value as EmailPlanDuration })}
           inputClassName="w-full text-sm py-2"
         >
           <option value="monthly">Monthly</option>
@@ -125,8 +135,8 @@ const PlanCardInternal: React.FC<PlanCardProps> = ({ plan, currentConfig, onPlan
           id={`${plan.id}-region`}
           label="Region"
           as="select"
-          value={region}
-          onChange={(e) => setRegion(e.target.value)}
+          value={currentConfig.region}
+          onChange={(e) => handleUpdate({ region: e.target.value })}
           inputClassName="w-full text-sm py-2"
         >
           {mockRegions.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
@@ -135,8 +145,11 @@ const PlanCardInternal: React.FC<PlanCardProps> = ({ plan, currentConfig, onPlan
           id={`${plan.id}-quantity`}
           label="Quantity"
           type="number"
-          value={quantity}
-          onChange={handleQuantityChange}
+          value={currentConfig.quantity}
+          onChange={(e) => {
+            const val = parseInt(e.target.value, 10);
+            handleUpdate({ quantity: isNaN(val) || val < 0 ? 0 : val });
+          }}
           min={0}
           inputClassName="w-full text-sm py-2" 
         />
@@ -146,8 +159,8 @@ const PlanCardInternal: React.FC<PlanCardProps> = ({ plan, currentConfig, onPlan
         type="checkbox"
         id={`${plan.id}-advanced-rules`}
         label={`Advanced Rules Engine (+$${ADVANCED_RULES_PRICE_MONTHLY.toFixed(2)}/mo)`}
-        checked={advancedRulesEnabled}
-        onChange={(e) => setAdvancedRulesEnabled((e.target as HTMLInputElement).checked)}
+        checked={currentConfig.advancedRulesEnabled}
+        onChange={(e) => handleUpdate({ advancedRulesEnabled: (e.target as HTMLInputElement).checked })}
         labelClassName="text-sm"
       />
     </Card>
@@ -161,7 +174,7 @@ interface SubscriptionSummaryCardProps {
   isProceedDisabled: boolean;
 }
 
-const SubscriptionSummaryCardInternal: React.FC<SubscriptionSummaryCardProps> = ({ order, totalAmount, onProceed, isProceedDisabled }) => {
+const SubscriptionSummaryCard: React.FC<SubscriptionSummaryCardProps> = ({ order, totalAmount, onProceed, isProceedDisabled }) => {
   return (
     <Card title="Posta Subscription Summary" className="sticky top-20">
       <div className="border-b border-gray-300 dark:border-gray-600 pb-3 mb-3 min-h-[50px]">
@@ -170,7 +183,7 @@ const SubscriptionSummaryCardInternal: React.FC<SubscriptionSummaryCardProps> = 
         ) : (
           <ul className="space-y-2">
             {order.filter(item => item.quantity > 0).map(item => {
-              const planDetails = mockEmailPlans.find(p => p.id === item.planId);
+              const planDetails = emailPlans.find(p => p.id === item.planId);
               if (!planDetails) return null;
               return (
                 <li key={item.planId} className="text-sm text-gray-700 dark:text-gray-300">
@@ -226,7 +239,7 @@ const PaymentStep: React.FC<{
                 <Card title="Order Summary">
                     <ul className="space-y-3">
                         {order.filter(item => item.quantity > 0).map(item => {
-                            const planDetails = mockEmailPlans.find(p => p.id === item.planId);
+                            const planDetails = emailPlans.find(p => p.id === item.planId);
                             if (!planDetails) return null;
                             return (
                                 <li key={item.planId} className="flex justify-between items-start text-sm">
@@ -299,10 +312,11 @@ const ConfirmationStep: React.FC<ConfirmationStepProps> = ({ onManageSubscriptio
 
 export const EmailAdminSubscriptionsPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [currentStep, setCurrentStep] = useState(0);
   // Stores configuration for all plans, even if quantity is 0
   const [orderConfiguration, setOrderConfiguration] = useState<ConfiguredPlan[]>(
-    mockEmailPlans.map(plan => ({
+    emailPlans.map(plan => ({
       planId: plan.id,
       quantity: 0,
       subscriptionTerm: 1,
@@ -311,6 +325,25 @@ export const EmailAdminSubscriptionsPage: React.FC = () => {
       region: mockRegions[0].id,
     }))
   );
+
+  useEffect(() => {
+    const planIdFromUrl = searchParams.get('plan');
+    const cycleFromUrl = searchParams.get('cycle');
+
+    if (planIdFromUrl && emailPlans.some(p => p.id === planIdFromUrl)) {
+      setOrderConfiguration(prevConfigs =>
+        prevConfigs.map(config =>
+          config.planId === planIdFromUrl
+            ? {
+                ...config,
+                quantity: 1,
+                subscriptionUnit: cycleFromUrl === 'annually' ? 'yearly' : 'monthly',
+              }
+            : { ...config, quantity: 0 }
+        )
+      );
+    }
+  }, [searchParams]);
 
   const handlePlanChange = useCallback((changedConfig: ConfiguredPlan) => {
     setOrderConfiguration(prevConfigs => 
@@ -355,23 +388,23 @@ export const EmailAdminSubscriptionsPage: React.FC = () => {
             <div className="lg:w-3/5 space-y-6">
                 <div className="flex justify-between items-center">
                     <h2 className="text-2xl font-semibold text-[#293c51] dark:text-gray-100">Available Posta Plans</h2>
-                    <Button variant="outline" size="sm" leftIconName="fas fa-external-link-alt" leftIconClassName="w-4 h-4" onClick={() => alert("Compare Plans (Conceptual)")}>
+                    <Button variant="outline" size="sm" leftIconName="fas fa-external-link-alt" leftIconClassName="w-4 h-4" onClick={() => navigate('/posta-pricing')}>
                         Compare Plans
                     </Button>
                 </div>
                 <div className="grid grid-cols-1 gap-6">
-                    {mockEmailPlans.map(plan => (
-                    <PlanCardInternal 
+                    {emailPlans.map(plan => (
+                    <PlanCard 
                         key={plan.id} 
                         plan={plan} 
-                        currentConfig={orderConfiguration.find(c => c.planId === plan.id)}
+                        currentConfig={orderConfiguration.find(c => c.planId === plan.id)!}
                         onPlanChange={handlePlanChange} 
                     />
                     ))}
                 </div>
             </div>
             <div className="lg:w-2/5">
-                <SubscriptionSummaryCardInternal 
+                <SubscriptionSummaryCard 
                     order={orderConfiguration.filter(item => item.quantity > 0)} 
                     totalAmount={currentOrderTotal}
                     onProceed={() => setCurrentStep(1)}

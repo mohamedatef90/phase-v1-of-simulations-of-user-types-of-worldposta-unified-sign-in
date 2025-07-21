@@ -1,45 +1,9 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, Button, Modal, FormField, Icon, ToggleSwitch } from '@/components/ui';
 import { useAuth } from '@/context';
 import type { SupportTicket, TicketAttachment, SupportTicketComment, User } from '@/types';
-
-const mockSupportTickets: SupportTicket[] = [
-    { 
-        id: 'TKT-58291', 
-        subject: 'Cannot access my VM', 
-        product: 'CloudEdge', 
-        status: 'In Progress', 
-        lastUpdate: new Date(Date.now() - 3600000).toISOString(), 
-        description: 'I am trying to SSH into my prod-web-01 VM and the connection is timing out. I have checked my firewall rules and nothing has changed. Please assist.', 
-        customerName: 'Demo Customer Alpha',
-        comments: [
-            {
-                author: 'Support Staff',
-                timestamp: new Date(Date.now() - 2 * 3600000).toISOString(),
-                content: 'Hello, we have received your ticket. Can you please confirm you are able to ping the gateway from another machine in the same network?'
-            },
-            {
-                author: 'Demo Customer Alpha',
-                timestamp: new Date(Date.now() - 1 * 3600000).toISOString(),
-                content: 'Yes, I can ping the gateway. The issue seems to be specific to SSH on port 22.'
-            }
-        ],
-        internalComments: [
-            {
-                author: 'Support Staff',
-                timestamp: new Date(Date.now() - 1.5 * 3600000).toISOString(),
-                content: 'Customer seems to have a network issue on their end, but I am checking our firewall logs just in case. No blocks found so far.'
-            },
-            {
-                author: 'Admin User',
-                timestamp: new Date(Date.now() - 1.2 * 3600000).toISOString(),
-                content: 'Good. Keep me updated. Let\'s resolve this quickly.'
-            }
-        ]
-    },
-    { id: 'TKT-58285', subject: 'Question about email archiving', product: 'Posta Email', status: 'Resolved', lastUpdate: new Date(Date.now() - 48 * 3600000).toISOString(), description: 'How long are emails archived by default on the Posta Premium plan?', customerName: 'Demo Customer Alpha' },
-    { id: 'TKT-58275', subject: 'Invoice Discrepancy', product: 'Subscriptions', status: 'Closed', lastUpdate: new Date(Date.now() - 120 * 3600000).toISOString(), description: 'My last invoice seems higher than expected. Can you please provide a breakdown?', customerName: 'Demo Customer Alpha' },
-];
+import { mockSupportTickets } from '@/data';
 
 interface ViewTicketModalProps {
     isOpen: boolean;
@@ -268,6 +232,7 @@ const ViewTicketModal: React.FC<ViewTicketModalProps> = ({ isOpen, onClose, tick
     );
 };
 
+
 export const SupportPage: React.FC = () => {
     const { user } = useAuth();
     const [tickets, setTickets] = useState<SupportTicket[]>(mockSupportTickets);
@@ -287,6 +252,7 @@ export const SupportPage: React.FC = () => {
     };
 
     const handleCreateTicket = () => {
+        // This could open a different modal for creation, but for now we'll alert.
         alert('This would open a form to create a new support ticket.');
     };
     

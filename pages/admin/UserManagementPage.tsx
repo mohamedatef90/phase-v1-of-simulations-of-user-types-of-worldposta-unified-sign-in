@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FormField, Button, Card, Modal, Icon } from '@/components/ui';
@@ -55,7 +56,7 @@ const UserListTable: React.FC<{
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div className="flex items-center justify-end space-x-2">
                                     <Button size="sm" onClick={() => onUserSelect(user.id)}>
-                                        View Dashboard
+                                        View As
                                     </Button>
                                     <Button 
                                         size="icon" 
@@ -89,17 +90,18 @@ export const UserManagementPage: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [customers, setCustomers] = useState(() => getAllMockCustomers());
     const navigate = useNavigate();
-
+    
+    // State for delete modal
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
     const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
 
-    const handleViewDashboard = (userId: string) => {
+    const handleViewAs = (userId: string) => {
         navigate(`/app/dashboard?viewAsUser=${userId}&returnTo=/app/admin/users`);
     };
-
+    
     const handleEditUser = (userId: string) => {
-        alert(`Editing user ID: ${userId}. This would typically open a user editing modal or page.`);
+        alert(`Editing customer ID: ${userId}. This would typically open a customer editing modal or page.`);
     };
 
     const handleOpenDeleteModal = (userId: string) => {
@@ -118,6 +120,7 @@ export const UserManagementPage: React.FC = () => {
 
     const handleConfirmDelete = () => {
         if (userToDelete && deleteConfirmationText === 'DELETE') {
+            // This is a mock operation. In a real app, you would call an API.
             setCustomers(prev => prev.filter(c => c.id !== userToDelete.id));
             if (MOCK_USERS[userToDelete.email]) {
                 delete MOCK_USERS[userToDelete.email];
@@ -125,30 +128,30 @@ export const UserManagementPage: React.FC = () => {
             handleCloseDeleteModal();
         }
     };
-
+    
     return (
         <>
-            <Card title="Customer Accounts">
+            <Card title="Customer Management">
                 <div className="flex justify-between items-center mb-4">
                     <div className="w-full max-w-xs">
                         <FormField id="search-customer" label="" placeholder="Search customers..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                     </div>
-                    <Button leftIconName="fas fa-user-plus">Add New User</Button>
+                    <Button leftIconName="fas fa-user-plus">Add New Customer</Button>
                 </div>
                 <UserListTable 
                     users={customers} 
                     searchTerm={searchTerm} 
-                    onUserSelect={handleViewDashboard} 
+                    onUserSelect={handleViewAs} 
                     onUserEdit={handleEditUser}
                     onUserDelete={handleOpenDeleteModal}
                 />
             </Card>
-
+            
             {isDeleteModalOpen && userToDelete && (
                  <Modal 
                     isOpen={isDeleteModalOpen} 
                     onClose={handleCloseDeleteModal}
-                    title={`Delete User: ${userToDelete.fullName}`}
+                    title={`Delete Customer: ${userToDelete.fullName}`}
                     size="md"
                     footer={
                         <>
@@ -158,21 +161,21 @@ export const UserManagementPage: React.FC = () => {
                                 onClick={handleConfirmDelete}
                                 disabled={deleteConfirmationText !== 'DELETE'}
                             >
-                                Delete User
+                                Delete Customer
                             </Button>
                         </>
                     }
                 >
                     <div className="space-y-4">
                         <p className="text-sm text-gray-700 dark:text-gray-300">
-                            This action is permanent and cannot be undone. You are about to delete the user account for 
+                            This action is permanent and cannot be undone. You are about to delete the customer account for 
                             <strong className="text-red-600 dark:text-red-400"> {userToDelete.fullName} ({userToDelete.email})</strong>.
                         </p>
                         <p className="text-sm text-gray-700 dark:text-gray-300">
                            To confirm, please type <strong className="font-mono text-[#293c51] dark:text-gray-200">DELETE</strong> in the box below.
                         </p>
                         <FormField
-                            id="delete-confirm"
+                            id="delete-confirm-admin"
                             label=""
                             value={deleteConfirmationText}
                             onChange={(e) => setDeleteConfirmationText(e.target.value)}

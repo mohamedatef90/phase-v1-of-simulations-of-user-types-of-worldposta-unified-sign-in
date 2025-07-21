@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Card } from '@/components/ui';
+import { Button, Card, Icon } from '@/components/ui';
 import type { ApplicationCardData } from '@/types';
 
 const ApplicationCard: React.FC<ApplicationCardData & { cardSize?: string }> = ({ name, description, iconName, launchUrl, cardSize }) => {
@@ -22,7 +23,7 @@ const ApplicationCard: React.FC<ApplicationCardData & { cardSize?: string }> = (
             {isImageUrl ? (
               <img src={iconName} alt={`${name} icon`} className="h-8 w-auto" />
             ) : (
-              <i className={`${iconName} text-2xl text-[#679a41] dark:text-emerald-400`} />
+                <Icon name={iconName} className="text-2xl text-[#679a41] dark:text-emerald-400" />
             )}
             <h3 className="text-xl font-semibold text-[#293c51] dark:text-gray-100">{name}</h3>
           </div>

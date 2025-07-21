@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button, Card, FormField, Icon, Logo, FloatingAppLauncher } from '@/components/ui';
@@ -265,7 +266,7 @@ const Certifications: React.FC = () => {
         "https://www.svgrepo.com/show/303472/adidas-logo.svg",
         "https://www.svgrepo.com/show/452131/coca-cola.svg",
         "https://www.svgrepo.com/show/303272/mcdonalds-15-logo.svg",
-        "https://www.svgrepo.com/show/303269/netflix-logo.svg",
+        "https://www.svgrepo.com/show/303268/netflix-logo.svg",
         "https://www.svgrepo.com/show/303152/amazon-logo.svg",
         "https://www.svgrepo.com/show/303268/google-logo.svg",
     ];
@@ -492,7 +493,12 @@ export const LandingPage: React.FC = () => {
             )}
             <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white dark:bg-slate-800 shadow-md' : 'bg-transparent'}`}>
                 <nav className="container mx-auto flex justify-between items-center p-4">
-                    <Logo iconClassName={`h-8 w-auto transition-all ${!isScrolled ? 'filter brightness-0 invert' : ''}`} />
+                    <div className="flex items-center gap-x-8">
+                        <Logo iconClassName={`h-8 w-auto transition-all ${!isScrolled ? 'filter brightness-0 invert' : ''}`} />
+                        <div className={`hidden md:flex items-center space-x-6 text-sm font-medium ${headerTextColor}`}>
+                            <Link to="/posta-pricing" className="hover:text-[#679a41] dark:hover:text-emerald-400">Posta Pricing</Link>
+                        </div>
+                    </div>
                     <div className="flex items-center space-x-2 md:space-x-4">
                          {isAuthenticated && user ? (
                             <>

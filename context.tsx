@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { User, AuthContextType } from '@/types';
@@ -33,7 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsLoading(false);
     }, []);
 
-    const login = useCallback(async (email: string, pass: string): Promise<void> => {
+    const login = useCallback(async (email: string, pass: string, redirectPath?: string): Promise<void> => {
         setIsLoading(true);
         try {
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -52,10 +53,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setIsAuthenticated(true);
                 localStorage.setItem('worldpostaUser', JSON.stringify(userData));
                 
-                const role = userData.role;
-                if (role === 'admin') navigate('/app/admin-dashboard');
-                else if (role === 'reseller') navigate('/app/reseller-dashboard');
-                else navigate('/app/dashboard');
+                if (redirectPath) {
+                    navigate(redirectPath);
+                } else {
+                    const role = userData.role;
+                    if (role === 'admin') navigate('/app/admin-dashboard');
+                    else if (role === 'reseller') navigate('/app/reseller-dashboard');
+                    else navigate('/app/dashboard');
+                }
             } else {
                 throw new Error("Invalid account name or password.");
             }

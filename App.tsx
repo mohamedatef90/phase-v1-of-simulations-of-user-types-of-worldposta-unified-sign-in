@@ -37,7 +37,8 @@ import {
     CloudEdgeLayout,
     CloudEdgeDashboardPage,
     EmailAdminSubscriptionsPage,
-    CloudEdgeConfigurationsPage
+    CloudEdgeConfigurationsPage,
+    PostaPricingPage
 } from '@/pages';
 
 
@@ -238,6 +239,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/email-verification" element={<EmailVerificationPage />} />
+            <Route path="/posta-pricing" element={<PostaPricingPage />} />
             
             {/* Protected Routes */}
             <Route element={<ProtectedRoute user={user} isAuthenticated={isAuthenticated} isLoading={isLoading} />}>

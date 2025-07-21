@@ -1,4 +1,6 @@
 
+
+
 export interface User {
   id: string;
   fullName: string;
@@ -25,7 +27,7 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
   isLoading: boolean;
-  login: (email: string, pass: string) => Promise<void>;
+  login: (email: string, pass: string, redirectPath?: string) => Promise<void>;
   signup: (details: Omit<User, 'id' | 'avatarUrl' | 'displayName' | 'phoneNumber' | 'role' | 'teamManagerId' | 'assignedGroupId' | 'status'> & {password: string}) => Promise<void>;
   logout: () => void;
   updateProfile: (details: Partial<Pick<User, 'fullName' | 'companyName' | 'displayName' | 'phoneNumber'>>) => Promise<void>;
@@ -122,6 +124,7 @@ export interface EmailPlan {
   basePriceMonthly: number;
   features: string[];
   description: string;
+  isRecommended?: boolean;
 }
 
 export interface EmailCartItem {
@@ -232,4 +235,30 @@ export interface AddedResource {
     packageId: string;
     organizationId: string;
     domainIds: string[];
+}
+
+export interface PricingPlan {
+  id: string;
+  name: string;
+  priceMonthly: number;
+  priceAnnually: number;
+  priceAnnuallyPerMonth: number;
+  description: string;
+  features: string[];
+  isRecommended?: boolean;
+}
+
+export interface Feature {
+  name:string;
+  availability: { [planId: string]: boolean | string };
+}
+
+export interface FeatureCategory {
+  name: string;
+  features: Feature[];
+}
+
+export interface FaqItem {
+  question: string;
+  answer: string;
 }

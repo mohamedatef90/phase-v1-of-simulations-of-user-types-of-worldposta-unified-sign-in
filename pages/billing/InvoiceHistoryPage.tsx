@@ -3,55 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Button } from '@/components/ui';
 import type { Invoice } from '@/types';
-
-const mockInvoices: Invoice[] = [
-    { 
-        id: 'INV-2024-004', 
-        date: '2024-08-01', 
-        amount: 250.00, 
-        status: 'Unpaid', 
-        url: '#',
-        customerId: 'user123',
-        customerName: 'Demo Customer Alpha',
-        customerAddress: ['123 Innovation Drive', 'Tech City, TX 75001', 'United States'],
-        customerEmail: 'customer@worldposta.com',
-        billingPeriod: 'Aug 1, 2024 to Sep 1, 2024',
-        nextBillingDate: 'Sep 1, 2024',
-        subscriptionId: 'sub-cloud-cluster-xyz',
-        lineItems: [
-            { description: 'CloudEdge - Web Server Cluster', units: 1, amount: 238.10 },
-            { description: 'Posta Standard Plan (5 users)', units: 1, amount: 50.00 },
-        ],
-        subTotal: 288.10,
-        tax: { label: 'Tax (8.25%)', amount: 23.77 },
-        payments: -61.87, // partial payment? just for example
-        amountDue: 250.00,
-        paymentDetails: 'Awaiting payment.'
-    },
-    { 
-        id: 'INV-2024-003', 
-        date: '2024-07-01', 
-        amount: 150.00, 
-        status: 'Paid', 
-        url: '#',
-        customerId: 'user123',
-        customerName: 'Demo Customer Alpha',
-        customerAddress: ['123 Innovation Drive', 'Tech City, TX 75001', 'United States'],
-        customerEmail: 'customer@worldposta.com',
-        billingPeriod: 'Jul 1, 2024 to Aug 1, 2024',
-        nextBillingDate: 'Aug 1, 2024',
-        subscriptionId: 'sub-posta-std-abc',
-        lineItems: [
-            { description: 'Posta Standard Plan (10 users)', units: 1, amount: 100.00 },
-            { description: 'Advanced Email Archiving', units: 1, amount: 42.86 },
-        ],
-        subTotal: 142.86,
-        tax: { label: 'Tax (5%)', amount: 7.14 },
-        payments: -150.00,
-        amountDue: 0.00,
-        paymentDetails: '$150.00 was paid on Jul 3, 2024 by Visa card ending 4242.'
-    },
-];
+import { mockInvoices } from '@/data';
 
 export const InvoiceHistoryPage: React.FC = () => {
     const navigate = useNavigate();

@@ -20,3 +20,6 @@ export * from './Stepper';
 export * from './ToggleSwitch';
 export * from './Tooltip';
 export * from './MultiSelectDropdown';
+export * from './PricingCard';
+export * from './FeatureComparison';
+export * from './FaqSection';

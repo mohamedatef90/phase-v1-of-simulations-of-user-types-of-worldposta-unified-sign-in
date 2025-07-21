@@ -39,3 +39,5 @@ export * from './settings/NotificationSettingsPage';
 export * from './settings/ProfilePage';
 export * from './settings/SecuritySettingsPage';
 export * from './settings/SettingsRouterPage';
+
+export * from './pricing/PostaPricingPage';

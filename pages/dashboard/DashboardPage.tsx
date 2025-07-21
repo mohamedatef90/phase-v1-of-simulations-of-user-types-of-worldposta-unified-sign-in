@@ -127,7 +127,7 @@ export const DashboardPage: React.FC = () => { // This is the Customer Dashboard
 
   // Hide specific cards for customer role as requested
   if (userToDisplay?.role === 'customer') {
-    const customerHiddenCardIds = ['billing', 'invoices', 'support'];
+    const customerHiddenCardIds = ['invoices', 'support'];
     allPortals = allPortals.filter(p => !customerHiddenCardIds.includes(p.id));
   }
 

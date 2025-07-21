@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { AuthLayout, FormField, Button } from '@/components/ui';
 import { useAuth } from '@/context';
 
@@ -10,6 +11,13 @@ export const SignupPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const { signup, isLoading } = useAuth();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.from?.pathname) {
+      sessionStorage.setItem('loginRedirectPath', location.state.from.pathname);
+    }
+  }, [location.state]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
