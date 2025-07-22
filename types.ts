@@ -1,6 +1,7 @@
 
 
 
+
 export interface User {
   id: string;
   fullName: string;
@@ -21,6 +22,13 @@ export interface UserGroup {
   description: string;
   permissions: string[]; // Array of permission key strings
   teamManagerId: string; // ID of the customer who owns/manages this group
+}
+
+export interface StaffGroup {
+  id: string;
+  name: string;
+  description: string;
+  permissions: string[];
 }
 
 export interface AuthContextType {

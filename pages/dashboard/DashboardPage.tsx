@@ -1,10 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context';
 import { getMockUserById } from '@/data';
 import type { User, ApplicationCardData } from '@/types';
-import { Card, Icon, Button } from '@/components/ui';
+import { Card, Icon, Button, Modal, FormField } from '@/components/ui';
+import { v4 as uuidv4 } from 'uuid';
 
 const ApplicationCard: React.FC<ApplicationCardData & { cardSize?: string }> = ({ name, description, iconName, launchUrl, cardSize }) => {
   const navigate = useNavigate();
@@ -49,6 +50,547 @@ const ApplicationCard: React.FC<ApplicationCardData & { cardSize?: string }> = (
   );
 };
 
+// Define Contact type
+interface Contact {
+    id: string;
+    title: string;
+    name: string;
+    details: string;
+}
+
+// Modal for adding/editing contacts
+interface ContactModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSave: (contact: Omit<Contact, 'id'>) => void;
+    contact: Contact | null;
+}
+
+const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, onSave, contact }) => {
+    const [formData, setFormData] = useState({
+        title: '',
+        name: '',
+        details: ''
+    });
+
+    useEffect(() => {
+        if(isOpen) {
+            setFormData({
+                title: contact?.title || '',
+                name: contact?.name || '',
+                details: contact?.details || ''
+            });
+        }
+    }, [contact, isOpen]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleSubmit = () => {
+        if (formData.name && formData.title && formData.details) {
+            onSave(formData);
+        } else {
+            alert('Please fill all fields.');
+        }
+    };
+
+    return (
+        <Modal 
+            isOpen={isOpen} 
+            onClose={onClose}
+            title={contact ? 'Edit Contact' : 'Add New Contact'}
+            footer={
+                <>
+                    <Button variant="ghost" onClick={onClose}>Cancel</Button>
+                    <Button onClick={handleSubmit}>Save</Button>
+                </>
+            }
+        >
+            <div className="space-y-4">
+                <FormField id="title" name="title" label="Title" value={formData.title} onChange={handleChange} required />
+                <FormField id="name" name="name" label="Name" value={formData.name} onChange={handleChange} required />
+                <FormField id="details" name="details" label="Details (Email/Phone)" value={formData.details} onChange={handleChange} required />
+            </div>
+        </Modal>
+    );
+};
+
+
+const ContactView: React.FC = () => {
+    const [contacts, setContacts] = useState<Contact[]>([
+        { id: 'c1', title: 'Billing Contact', name: 'John Doe', details: 'billing@alpha.inc' },
+        { id: 'c2', title: 'Technical Contact', name: 'Jane Smith', details: 'tech@alpha.inc' },
+        { id: 'c3', title: 'Primary Contact', name: 'Demo Customer Alpha', details: 'customer@worldposta.com' }
+    ]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingContact, setEditingContact] = useState<Contact | null>(null);
+
+    const handleOpenModal = (contact: Contact | null = null) => {
+        setEditingContact(contact);
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setEditingContact(null);
+    };
+
+    const handleSaveContact = (contactData: Omit<Contact, 'id'>) => {
+        if (editingContact) {
+            setContacts(contacts.map(c => c.id === editingContact.id ? { ...editingContact, ...contactData } : c));
+        } else {
+            setContacts([...contacts, { id: uuidv4(), ...contactData }]);
+        }
+        handleCloseModal();
+    };
+    
+    const handleDeleteContact = (contactId: string) => {
+        if (window.confirm("Are you sure you want to delete this contact?")) {
+            setContacts(contacts.filter(c => c.id !== contactId));
+        }
+    };
+
+    return (
+        <>
+            <Card title="Contact Information" titleActions={
+                <Button onClick={() => handleOpenModal()} leftIconName="fas fa-plus">
+                    Add Contact
+                </Button>
+            }>
+                <div className="overflow-x-auto">
+                    <table className="min-w-full">
+                        <thead className="bg-gray-50 dark:bg-slate-700">
+                            <tr>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Title</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Name</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Details</th>
+                                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                            {contacts.map(contact => (
+                                <tr key={contact.id}>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#293c51] dark:text-gray-200">{contact.title}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#293c51] dark:text-gray-200">{contact.name}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{contact.details}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm">
+                                        <div className="flex items-center justify-end space-x-1">
+                                            <Button size="icon" variant="ghost" onClick={() => handleOpenModal(contact)} title="Edit">
+                                                <Icon name="fas fa-pencil-alt" />
+                                            </Button>
+                                            <Button size="icon" variant="ghost" onClick={() => handleDeleteContact(contact.id)} title="Delete">
+                                                <Icon name="fas fa-trash-alt" className="text-red-500" />
+                                            </Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </Card>
+
+            {isModalOpen && (
+                <ContactModal 
+                    isOpen={isModalOpen}
+                    onClose={handleCloseModal}
+                    onSave={handleSaveContact}
+                    contact={editingContact}
+                />
+            )}
+        </>
+    );
+};
+
+// Define Comment type
+interface Comment {
+    id: string;
+    text: string;
+    createdBy: string;
+    createDate: string;
+}
+
+// Modal for adding/editing comments
+interface CommentModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSave: (commentText: string) => void;
+    comment: Comment | null;
+}
+
+const CommentModal: React.FC<CommentModalProps> = ({ isOpen, onClose, onSave, comment }) => {
+    const [text, setText] = useState('');
+
+    useEffect(() => {
+        if (isOpen) {
+            setText(comment?.text || '');
+        }
+    }, [comment, isOpen]);
+
+    const handleSubmit = () => {
+        if (text.trim()) {
+            onSave(text.trim());
+        } else {
+            alert('Comment cannot be empty.');
+        }
+    };
+
+    return (
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title={comment ? 'Edit Comment' : 'Add New Comment'}
+            footer={
+                <>
+                    <Button variant="ghost" onClick={onClose}>Cancel</Button>
+                    <Button onClick={handleSubmit}>Save</Button>
+                </>
+            }
+        >
+            <div className="space-y-4">
+                <FormField
+                    id="comment-text"
+                    name="text"
+                    label="Comment"
+                    as="textarea"
+                    rows={6}
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    required
+                />
+            </div>
+        </Modal>
+    );
+};
+
+const CommentsView: React.FC = () => {
+    const { user: adminUser } = useAuth();
+    const [comments, setComments] = useState<Comment[]>([
+        { id: 'comment1', text: 'Customer interested in upgrading to CloudEdge Enterprise plan. Follow up next week.', createdBy: 'Admin User', createDate: new Date(Date.now() - 86400000).toISOString() },
+        { id: 'comment2', text: 'Sent promotional material for the new AI services. Awaiting response.', createdBy: 'Admin User', createDate: new Date().toISOString() },
+    ]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingComment, setEditingComment] = useState<Comment | null>(null);
+
+    const handleOpenModal = (comment: Comment | null = null) => {
+        setEditingComment(comment);
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setEditingComment(null);
+    };
+
+    const handleSaveComment = (commentText: string) => {
+        if (editingComment) {
+            setComments(comments.map(c => c.id === editingComment.id ? { ...c, text: commentText } : c));
+        } else {
+            const newComment: Comment = { id: uuidv4(), text: commentText, createdBy: adminUser?.fullName || 'Admin', createDate: new Date().toISOString() };
+            setComments([newComment, ...comments]);
+        }
+        handleCloseModal();
+    };
+
+    const handleDeleteComment = (commentId: string) => {
+        if (window.confirm("Are you sure you want to delete this comment?")) {
+            setComments(comments.filter(c => c.id !== commentId));
+        }
+    };
+
+    return (
+        <>
+            <Card title="Comments & Notes" titleActions={
+                <Button onClick={() => handleOpenModal()} leftIconName="fas fa-plus">
+                    Add Comment
+                </Button>
+            }>
+                <div className="overflow-x-auto">
+                    <table className="min-w-full">
+                        <thead className="bg-gray-50 dark:bg-slate-700">
+                            <tr>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase w-3/5">Comment</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Created By</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Create Date</th>
+                                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                            {comments.map(comment => (
+                                <tr key={comment.id}>
+                                    <td className="px-4 py-3 whitespace-pre-wrap text-sm text-[#293c51] dark:text-gray-200">{comment.text}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{comment.createdBy}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{new Date(comment.createDate).toLocaleDateString()}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm">
+                                        <div className="flex items-center justify-end space-x-1">
+                                            <Button size="icon" variant="ghost" onClick={() => handleOpenModal(comment)} title="Edit">
+                                                <Icon name="fas fa-pencil-alt" />
+                                            </Button>
+                                            <Button size="icon" variant="ghost" onClick={() => handleDeleteComment(comment.id)} title="Delete">
+                                                <Icon name="fas fa-trash-alt" className="text-red-500" />
+                                            </Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    {comments.length === 0 && (
+                        <p className="text-center py-6 text-gray-500 dark:text-gray-400">No comments yet. Add one to get started.</p>
+                    )}
+                </div>
+            </Card>
+
+            {isModalOpen && (
+                <CommentModal 
+                    isOpen={isModalOpen}
+                    onClose={handleCloseModal}
+                    onSave={handleSaveComment}
+                    comment={editingComment}
+                />
+            )}
+        </>
+    );
+};
+
+// START OF NEW IMPLEMENTATION
+interface CustomerDocument {
+    id: string;
+    documentName: string;
+    documentType: 'Contract' | 'Invoice' | 'Report' | 'JPG' | 'PNG' | 'DOC' | 'PDF' | 'Other';
+    fileName: string;
+    fileSize: number; // in bytes
+    createdBy: string;
+    creationDate: string;
+}
+
+interface DocumentModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSave: (data: Pick<CustomerDocument, 'documentName' | 'documentType'> & { file: File }) => void;
+    document: CustomerDocument | null;
+}
+
+const DocumentModal: React.FC<DocumentModalProps> = ({ isOpen, onClose, onSave, document }) => {
+    const [formData, setFormData] = useState({
+        documentName: '',
+        documentType: 'Other' as CustomerDocument['documentType']
+    });
+    const [file, setFile] = useState<File | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (isOpen) {
+            setFormData({
+                documentName: document?.documentName || '',
+                documentType: document?.documentType || 'Other',
+            });
+            setFile(null); // Reset file on open
+        }
+    }, [document, isOpen]);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setFile(e.target.files[0]);
+        }
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleSimpleSubmit = () => {
+        if (!formData.documentName || !formData.documentType) {
+            alert('Please fill all fields.');
+            return;
+        }
+        if (!file && !document) {
+             alert('Please select a file to upload.');
+             return;
+        }
+        const finalFile = file || new File([""], document?.fileName || "placeholder.txt", { type: "text/plain" });
+        onSave({ ...formData, file: finalFile });
+    };
+
+    return (
+        <Modal 
+            isOpen={isOpen} 
+            onClose={onClose}
+            title={document ? 'Edit Document' : 'Add New Document'}
+            footer={
+                <>
+                    <Button variant="ghost" onClick={onClose}>Cancel</Button>
+                    <Button onClick={handleSimpleSubmit}>Save</Button>
+                </>
+            }
+        >
+            <div className="space-y-4">
+                <FormField id="documentName" name="documentName" label="Document Name" value={formData.documentName} onChange={handleChange} required />
+                <FormField as="select" id="documentType" name="documentType" label="Document Type" value={formData.documentType} onChange={handleChange} required>
+                    <option value="Contract">Contract</option>
+                    <option value="Invoice">Invoice</option>
+                    <option value="Report">Report</option>
+                    <option value="JPG">JPG</option>
+                    <option value="PNG">PNG</option>
+                    <option value="DOC">DOC</option>
+                    <option value="PDF">PDF</option>
+                    <option value="Other">Other</option>
+                </FormField>
+                <div>
+                     <label className="block text-sm font-medium mb-1 text-[#293c51] dark:text-gray-300">
+                        File {document ? '(Optional: select to replace)' : ''}
+                    </label>
+                    <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        onChange={handleFileChange} 
+                        className="hidden"
+                        accept=".jpg,.jpeg,.png,.doc,.docx,.pdf"
+                    />
+                    <Button 
+                        type="button"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        leftIconName="fas fa-upload"
+                        className="rounded-md"
+                    >
+                        Choose File
+                    </Button>
+                    {file && <p className="text-xs mt-2 text-gray-500">Selected: {file.name} ({(file.size / 1024).toFixed(2)} KB)</p>}
+                    {!file && document && <p className="text-xs mt-2 text-gray-500">Current file: {document.fileName}</p>}
+                </div>
+            </div>
+        </Modal>
+    );
+};
+
+
+const DocumentsView: React.FC = () => {
+    const { user: adminUser } = useAuth();
+    const [documents, setDocuments] = useState<CustomerDocument[]>([
+        { id: 'doc1', documentName: 'Q1 2024 Performance Review', documentType: 'Report', fileName: 'q1_perf_review.pdf', fileSize: 2048000, createdBy: 'Admin User', creationDate: new Date(Date.now() - 86400000 * 10).toISOString() },
+        { id: 'doc2', documentName: 'Master Service Agreement', documentType: 'Contract', fileName: 'msa_v3.docx', fileSize: 150000, createdBy: 'Admin User', creationDate: new Date(Date.now() - 86400000 * 30).toISOString() },
+    ]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingDocument, setEditingDocument] = useState<CustomerDocument | null>(null);
+
+    const handleOpenModal = (doc: CustomerDocument | null = null) => {
+        setEditingDocument(doc);
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setEditingDocument(null);
+    };
+
+    const handleSaveDocument = (data: Pick<CustomerDocument, 'documentName' | 'documentType'> & { file: File }) => {
+        if (editingDocument) {
+            setDocuments(documents.map(d => d.id === editingDocument.id ? { ...editingDocument, documentName: data.documentName, documentType: data.documentType, fileName: data.file.name, fileSize: data.file.size } : d));
+        } else {
+            const newDoc: CustomerDocument = { 
+                id: uuidv4(),
+                documentName: data.documentName,
+                documentType: data.documentType,
+                fileName: data.file.name,
+                fileSize: data.file.size,
+                createdBy: adminUser?.fullName || 'Admin',
+                creationDate: new Date().toISOString()
+            };
+            setDocuments([newDoc, ...documents]);
+        }
+        handleCloseModal();
+    };
+
+    const handleDeleteDocument = (docId: string) => {
+        if (window.confirm("Are you sure you want to delete this document?")) {
+            setDocuments(documents.filter(d => d.id !== docId));
+        }
+    };
+    
+    return (
+        <>
+            <Card title="Documents" titleActions={
+                <Button onClick={() => handleOpenModal()} leftIconName="fas fa-plus">
+                    Add Document
+                </Button>
+            }>
+                <div className="overflow-x-auto">
+                    <table className="min-w-full">
+                        <thead className="bg-gray-50 dark:bg-slate-700">
+                            <tr>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Document Name</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Type</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">File Name</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Created By</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Creation Date</th>
+                                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                            {documents.map(doc => (
+                                <tr key={doc.id}>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#293c51] dark:text-gray-200 font-medium">{doc.documentName}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{doc.documentType}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{doc.fileName} ({ (doc.fileSize / (1024*1024) < 0.01 ? (doc.fileSize/1024).toFixed(2) + ' KB' : (doc.fileSize / (1024*1024)).toFixed(2) + ' MB')})</td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{doc.createdBy}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{new Date(doc.creationDate).toLocaleDateString()}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm">
+                                        <div className="flex items-center justify-end space-x-1">
+                                            <Button size="icon" variant="ghost" onClick={() => handleOpenModal(doc)} title="Edit">
+                                                <Icon name="fas fa-pencil-alt" />
+                                            </Button>
+                                            <Button size="icon" variant="ghost" onClick={() => handleDeleteDocument(doc.id)} title="Delete">
+                                                <Icon name="fas fa-trash-alt" className="text-red-500" />
+                                            </Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    {documents.length === 0 && (
+                        <p className="text-center py-6 text-gray-500 dark:text-gray-400">No documents found.</p>
+                    )}
+                </div>
+            </Card>
+
+            {isModalOpen && (
+                <DocumentModal
+                    isOpen={isModalOpen}
+                    onClose={handleCloseModal}
+                    onSave={handleSaveDocument}
+                    document={editingDocument}
+                />
+            )}
+        </>
+    );
+};
+// END OF NEW IMPLEMENTATION
+
+const DashboardView: React.FC<{ productPortals: (ApplicationCardData & { section: 'product' | 'application' })[], applicationPortals: (ApplicationCardData & { section: 'product' | 'application' })[] }> = ({ productPortals, applicationPortals }) => (
+    <div className="space-y-8">
+        {productPortals.length > 0 && (
+            <div>
+            <h2 className="text-2xl font-semibold mb-4 text-[#293c51] dark:text-gray-200">Products</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                {productPortals.map(app => <ApplicationCard key={app.id} {...app} cardSize="md:col-span-1" />)}
+            </div>
+            </div>
+        )}
+
+        {applicationPortals.length > 0 && (
+            <div>
+            <h2 className="text-2xl font-semibold mb-4 text-[#293c51] dark:text-gray-200">Applications</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                {applicationPortals.map(app => <ApplicationCard key={app.id} {...app} />)}
+            </div>
+            </div>
+        )}
+    </div>
+);
+
 
 export const DashboardPage: React.FC = () => { // This is the Customer Dashboard
   const { user: loggedInUser } = useAuth();
@@ -57,6 +599,7 @@ export const DashboardPage: React.FC = () => { // This is the Customer Dashboard
   const returnToPath = searchParams.get('returnTo');
   
   const [targetUser, setTargetUser] = useState<User | null>(null);
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   useEffect(() => {
     if (viewAsUserId) {
@@ -120,24 +663,30 @@ export const DashboardPage: React.FC = () => { // This is the Customer Dashboard
 
   const userToDisplay = viewAsUserId ? targetUser : loggedInUser;
 
-  // If a reseller is viewing a customer dashboard, hide their own billing/invoices.
   if (loggedInUser?.role === 'reseller' && viewAsUserId) {
     allPortals = allPortals.filter(p => p.id !== 'billing' && p.id !== 'invoices');
   }
 
-  // Hide specific cards for customer role as requested
   if (userToDisplay?.role === 'customer') {
     const customerHiddenCardIds = ['invoices', 'support'];
     allPortals = allPortals.filter(p => !customerHiddenCardIds.includes(p.id));
   }
 
-  // The User Management card should only be visible to customers, similar to the sidebar link.
   if (userToDisplay?.role !== 'customer') {
       allPortals = allPortals.filter(p => p.id !== 'user-management');
   }
 
   const productPortals = allPortals.filter(p => p.section === 'product');
   const applicationPortals = allPortals.filter(p => p.section === 'application');
+
+  const isAdminViewAs = viewAsUserId && loggedInUser?.role === 'admin';
+  
+  const tabItems = [
+    { id: 'dashboard', name: 'Dashboard' },
+    { id: 'contact', name: 'Contact' },
+    { id: 'comments', name: 'Comments' },
+    { id: 'documents', name: 'Documents' },
+  ];
   
   return (
     <div className="space-y-6">
@@ -160,29 +709,41 @@ export const DashboardPage: React.FC = () => { // This is the Customer Dashboard
         </Card>
       )}
 
-      <h1 className="text-3xl font-bold text-[#293c51] dark:text-gray-100">
-        Welcome, <span className="text-[#679a41] dark:text-emerald-400">{userToDisplay?.displayName || userToDisplay?.fullName || 'User'}</span>!
-      </h1>
+      {!isAdminViewAs && (
+        <h1 className="text-3xl font-bold text-[#293c51] dark:text-gray-100">
+          Welcome, <span className="text-[#679a41] dark:text-emerald-400">{userToDisplay?.displayName || userToDisplay?.fullName || 'User'}</span>!
+        </h1>
+      )}
       
-      <div className="space-y-8">
-        {productPortals.length > 0 && (
-            <div>
-            <h2 className="text-2xl font-semibold mb-4 text-[#293c51] dark:text-gray-200">Products</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {productPortals.map(app => <ApplicationCard key={app.id} {...app} cardSize="md:col-span-1" />)}
-            </div>
-            </div>
-        )}
-
-        {applicationPortals.length > 0 && (
-            <div>
-            <h2 className="text-2xl font-semibold mb-4 text-[#293c51] dark:text-gray-200">Applications</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-                {applicationPortals.map(app => <ApplicationCard key={app.id} {...app} />)}
-            </div>
-            </div>
-        )}
-      </div>
+      {isAdminViewAs ? (
+        <>
+          <div className="border-b border-gray-200 dark:border-gray-700">
+              <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+                  {tabItems.map(tab => (
+                      <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id)}
+                          className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                              activeTab === tab.id
+                                  ? 'border-[#679a41] text-[#679a41] dark:border-emerald-400 dark:text-emerald-400'
+                                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                          }`}
+                      >
+                          {tab.name}
+                      </button>
+                  ))}
+              </nav>
+          </div>
+          <div className="mt-4">
+              {activeTab === 'dashboard' && <DashboardView productPortals={productPortals} applicationPortals={applicationPortals} />}
+              {activeTab === 'contact' && <ContactView />}
+              {activeTab === 'comments' && <CommentsView />}
+              {activeTab === 'documents' && <DocumentsView />}
+          </div>
+        </>
+      ) : (
+         <DashboardView productPortals={productPortals} applicationPortals={applicationPortals} />
+      )}
     </div>
   );
 };

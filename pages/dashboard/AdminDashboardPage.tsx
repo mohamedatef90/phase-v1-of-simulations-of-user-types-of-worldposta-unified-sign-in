@@ -51,6 +51,22 @@ const ApplicationCard: React.FC<ApplicationCardData & { cardSize?: string }> = (
 
 export const AdminDashboardPage: React.FC = () => {
     const adminApps: (ApplicationCardData & {section: 'product' | 'application'})[] = [
+        { 
+            id: 'cloudedge', 
+            name: 'CloudEdge', 
+            description: 'Manage your cloud infrastructure, VMs, and network resources efficiently.', 
+            iconName: "https://console.worldposta.com/assets/loginImgs/edgeLogo.png", 
+            launchUrl: '/app/cloud-edge',
+            section: 'product',
+        },
+        { 
+            id: 'emailadmin', 
+            name: 'Email Admin Suite', 
+            description: 'Administer your email services, mailboxes, users, and domains with ease.', 
+            iconName: "https://www.worldposta.com/assets/Posta-Logo.png", 
+            launchUrl: 'https://tools.worldposta.com/login',
+            section: 'product',
+        },
         {
             id: 'customers',
             name: 'Customers',
@@ -66,13 +82,42 @@ export const AdminDashboardPage: React.FC = () => {
             iconName: 'fas fa-cash-register',
             launchUrl: '/app/billing',
             section: 'application'
+        },
+        {
+            id: 'support',
+            name: 'Support Center',
+            description: 'View and manage all customer support tickets.',
+            iconName: 'fas fa-headset',
+            launchUrl: '/app/support',
+            section: 'application',
         }
     ];
+
+    const productPortals = adminApps.filter(p => p.section === 'product');
+    const applicationPortals = adminApps.filter(p => p.section === 'application');
+
     return (
         <div className="space-y-6">
             <h1 className="text-3xl font-bold text-[#293c51] dark:text-gray-100">Admin Dashboard</h1>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {adminApps.map(app => <ApplicationCard key={app.id} {...app} />)}
+            
+            <div className="space-y-8">
+                {productPortals.length > 0 && (
+                    <div>
+                        <h2 className="text-2xl font-semibold mb-4 text-[#293c51] dark:text-gray-200">Products</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {productPortals.map(app => <ApplicationCard key={app.id} {...app} />)}
+                        </div>
+                    </div>
+                )}
+
+                {applicationPortals.length > 0 && (
+                    <div>
+                        <h2 className="text-2xl font-semibold mb-4 text-[#293c51] dark:text-gray-200">Applications</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {applicationPortals.map(app => <ApplicationCard key={app.id} {...app} />)}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

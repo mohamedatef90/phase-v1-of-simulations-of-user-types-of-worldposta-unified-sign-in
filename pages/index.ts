@@ -1,4 +1,5 @@
 
+
 export * from './ActionLogsPage';
 export * from './AllNotificationsPage';
 export * from './CloudEdgeLayout';
@@ -25,6 +26,7 @@ export * from './billing/InvoiceRouterPage';
 
 export * from './customer/AddTeamUserPage';
 export * from './customer/CustomerTeamManagementPage';
+export * from './customer/EditTeamUserPage';
 
 export * from './dashboard/AdminDashboardPage';
 export * from './dashboard/CloudEdgeDashboardPage';

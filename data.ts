@@ -1,5 +1,6 @@
 
-import type { User, UserGroup, Invoice, SupportTicket, LogEntry, SupportTicketProduct, InvoiceLineItem } from './types';
+
+import type { User, UserGroup, Invoice, SupportTicket, LogEntry, SupportTicketProduct, InvoiceLineItem, StaffGroup } from './types';
 
 // Mock User Data
 export const MOCK_USERS: { [email: string]: User & { passwordHash: string } } = {
@@ -131,6 +132,38 @@ export const MOCK_PERMISSIONS: string[] = [
 ];
 
 
+export const MOCK_ADMIN_PERMISSIONS: string[] = [
+    'manage_customers',
+    'view_all_billing',
+    'manage_all_billing',
+    'manage_support_tickets',
+    'manage_staff_members',
+    'manage_staff_groups',
+    'access_system_settings',
+    'impersonate_users'
+];
+
+export const MOCK_STAFF_GROUPS: StaffGroup[] = [
+    {
+        id: "staffGroupAdmins",
+        name: "Super Administrators",
+        description: "Full access to all system features and settings.",
+        permissions: MOCK_ADMIN_PERMISSIONS,
+    },
+    {
+        id: "staffGroupSupport",
+        name: "Support Team",
+        description: "Can manage customer support tickets and view customer information.",
+        permissions: ['manage_support_tickets', 'view_all_billing', 'manage_customers'],
+    },
+    {
+        id: "staffGroupBilling",
+        name: "Billing Department",
+        description: "Manages all aspects of customer and system billing.",
+        permissions: ['view_all_billing', 'manage_all_billing'],
+    }
+];
+
 // Function to get user by ID, used by DashboardPage for "View As" mode
 export const getMockUserById = (userId: string): User | undefined => {
   return Object.values(MOCK_USERS).find(u => u.id === userId);
@@ -150,6 +183,10 @@ export const getUsersForTeam = (teamManagerId: string): User[] => {
 // Function to get groups for a specific team manager
 export const getGroupsForTeam = (teamManagerId: string): UserGroup[] => {
   return MOCK_USER_GROUPS.filter(g => g.teamManagerId === teamManagerId);
+};
+
+export const getAllMockStaffGroups = (): StaffGroup[] => {
+  return MOCK_STAFF_GROUPS;
 };
 
 

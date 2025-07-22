@@ -1,9 +1,11 @@
 
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Routes, Route, Navigate, useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useLocation, Outlet, useSearchParams } from 'react-router-dom';
 import { AuthProvider, ThemeProvider, useAuth, AppLayoutContext } from '@/context';
 import type { User, AuthContextType, NavItem, UserGroup, ApplicationCardData } from '@/types';
 import { Navbar, Sidebar, Spinner, Breadcrumbs, Footer, Icon, FloatingAppLauncher } from '@/components/ui'; 
+import { getMockUserById } from '@/data';
 import { 
     LandingPage, 
     LoginPage, 
@@ -30,6 +32,7 @@ import {
     ActionLogsPage,
     CustomerTeamManagementPage,
     AddTeamUserPage,
+    EditTeamUserPage,
     ResellerProgramPage,
     SupportPage,
     NotFoundPage,
@@ -145,6 +148,7 @@ const getAppLauncherItems = (role: User['role'] | undefined): ApplicationCardDat
 const AppLayout: React.FC = () => {
     const { user, logout } = useAuth();
     const location = useLocation();
+    const [searchParams] = useSearchParams();
     const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
     const [isDesktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(() => {
         return localStorage.getItem('sidebarCollapsed') === 'true';
@@ -155,24 +159,102 @@ const AppLayout: React.FC = () => {
         localStorage.setItem('sidebarCollapsed', String(isDesktopSidebarCollapsed));
     }, [isDesktopSidebarCollapsed]);
     
-    const navItems = useMemo(() => user ? getNavItems(user.role) : [], [user]);
+    const navItems = useMemo(() => {
+        const viewAsUserId = searchParams.get('viewAsUser');
+        const returnTo = searchParams.get('returnTo');
+        
+        // If in "View As" mode, show the customer's navigation items and append query params.
+        if (viewAsUserId && returnTo && user && (user.role === 'admin' || user.role === 'reseller')) {
+            const customerNavs = getNavItems('customer');
+            return customerNavs.map(item => ({
+                ...item,
+                path: `${item.path}?viewAsUser=${viewAsUserId}&returnTo=${encodeURIComponent(returnTo)}`
+            }));
+        }
+        
+        // Otherwise, show the logged-in user's navigation items.
+        return user ? getNavItems(user.role) : [];
+    }, [user, searchParams]);
+    
     const appLauncherItems = useMemo(() => getAppLauncherItems(user?.role), [user]);
 
     const breadcrumbItems = useMemo(() => {
+        const viewAsUserId = searchParams.get('viewAsUser');
+        const returnToPath = searchParams.get('returnTo');
         const pathnames = location.pathname.split('/').filter(x => x);
+
+        const BREADCRUMB_LABELS: { [key: string]: string } = {
+            'admin': 'Admin',
+            'users': 'Customer Management',
+            'staff': 'Staff Management',
+            'system': 'System Settings',
+            'team-management': 'User Management',
+            'add': 'Add User',
+            'edit': 'Edit User',
+            'billing': 'Billing',
+            'email-subscriptions': 'Email Subscriptions',
+            'email-configurations': 'Email Configurations',
+            'cloudedge-configurations': 'CloudEdge Configurations',
+            'invoices': 'Invoices',
+            'action-logs': 'Action Logs',
+            'support': 'Support',
+            'settings': 'Settings',
+            'account': 'Account Settings',
+            'security': 'Security Settings',
+            'notifications': 'Notifications',
+            'reseller': 'Reseller',
+            'customers': 'My Customers',
+            'program': 'My Program',
+        };
+        
+        const getLabel = (value: string) => {
+            return BREADCRUMB_LABELS[value] || value.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        };
+
+        // "View As" mode breadcrumbs for admin/reseller
+        if (viewAsUserId && returnToPath && user && (user.role === 'admin' || user.role === 'reseller')) {
+            const viewedUser = getMockUserById(viewAsUserId);
+            if (!viewedUser) return [];
+
+            const adminHomePath = user.role === 'admin' ? '/app/admin-dashboard' : '/app/reseller-dashboard';
+            const crumbs = [{ label: 'Dashboard', path: adminHomePath }];
+
+            let returnLabel = getLabel(returnToPath.split('/').pop() || '');
+            crumbs.push({ label: returnLabel, path: returnToPath });
+            
+            const customerDashboardPath = `/app/dashboard?viewAsUser=${viewAsUserId}&returnTo=${encodeURIComponent(returnToPath)}`;
+            crumbs.push({ label: viewedUser.fullName, path: customerDashboardPath });
+            
+            pathnames.slice(1).forEach((value, index) => {
+                if (value === 'dashboard') return; 
+
+                const to = `/app/${pathnames.slice(1, index + 2).join('/')}?viewAsUser=${viewAsUserId}&returnTo=${encodeURIComponent(returnToPath)}`;
+                const label = getLabel(value);
+                crumbs.push({ label, path: to });
+            });
+            
+            if (crumbs.length > 1) {
+                delete crumbs[crumbs.length - 1].path;
+            }
+
+            return crumbs;
+        }
+
+        // Original breadcrumb logic for other cases
         if (pathnames[0] !== 'app') return [];
 
         let homePath = '/app/dashboard';
         if (user?.role === 'admin') homePath = '/app/admin-dashboard';
         if (user?.role === 'reseller') homePath = '/app/reseller-dashboard';
 
-
-        const crumbs = [{ label: 'Home', path: homePath }];
+        const crumbs = [{ label: 'Dashboard', path: homePath }];
         
         pathnames.slice(1).forEach((value, index) => {
+            if (value === 'admin' || value.endsWith('-dashboard')) return;
+
             const to = `/app/${pathnames.slice(1, index + 2).join('/')}`;
-            const label = value.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            if (label !== 'App') {
+            const label = getLabel(value);
+            if (label !== 'Dashboard' && label !== 'App') {
                  crumbs.push({ label, path: to });
             }
         });
@@ -182,7 +264,7 @@ const AppLayout: React.FC = () => {
         }
 
         return crumbs;
-    }, [location.pathname, user?.role]);
+    }, [location, user, searchParams]);
 
     if (!user) {
         return <Navigate to="/login" replace />;
@@ -230,6 +312,26 @@ const AppLayout: React.FC = () => {
 };
 
 
+const AppIndexRedirect: React.FC = () => {
+    const { user } = useAuth();
+  
+    // This component is rendered within ProtectedRoute, so user should exist.
+    if (!user) {
+      // This is a fallback, should not be reached in normal flow.
+      return <Navigate to="/login" replace />; 
+    }
+  
+    switch (user.role) {
+      case 'admin':
+        return <Navigate to="/app/admin-dashboard" replace />;
+      case 'reseller':
+        return <Navigate to="/app/reseller-dashboard" replace />;
+      case 'customer':
+      default:
+        return <Navigate to="/app/dashboard" replace />;
+    }
+};
+
 const AppRoutes: React.FC = () => {
     const { user, isAuthenticated, isLoading } = useAuth();
     
@@ -244,7 +346,7 @@ const AppRoutes: React.FC = () => {
             {/* Protected Routes */}
             <Route element={<ProtectedRoute user={user} isAuthenticated={isAuthenticated} isLoading={isLoading} />}>
                 <Route path="/app" element={<AppLayout />}>
-                    <Route index element={<Navigate to="dashboard" replace />} />
+                    <Route index element={<AppIndexRedirect />} />
                     
                     {/* Customer Routes */}
                     <Route path="dashboard" element={<DashboardPage />} />
@@ -261,6 +363,7 @@ const AppRoutes: React.FC = () => {
                     <Route path="team-management">
                         <Route index element={<CustomerTeamManagementPage />} />
                         <Route path="add" element={<AddTeamUserPage />} />
+                        <Route path="edit/:userId" element={<EditTeamUserPage />} />
                     </Route>
                     <Route path="support" element={<SupportPage />} />
 
