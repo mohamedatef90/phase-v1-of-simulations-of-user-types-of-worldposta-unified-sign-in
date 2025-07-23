@@ -225,7 +225,16 @@ const AppLayout: React.FC = () => {
             const customerDashboardPath = `/app/dashboard?viewAsUser=${viewAsUserId}&returnTo=${encodeURIComponent(returnToPath)}`;
             crumbs.push({ label: viewedUser.fullName, path: customerDashboardPath });
             
-            pathnames.slice(1).forEach((value, index) => {
+            let segmentsToProcess = pathnames.slice(1);
+            if (
+                segmentsToProcess.length === 3 &&
+                segmentsToProcess[0] === 'team-management' &&
+                segmentsToProcess[1] === 'edit'
+            ) {
+                segmentsToProcess = segmentsToProcess.slice(0, 2);
+            }
+
+            segmentsToProcess.forEach((value, index) => {
                 if (value === 'dashboard') return; 
 
                 const to = `/app/${pathnames.slice(1, index + 2).join('/')}?viewAsUser=${viewAsUserId}&returnTo=${encodeURIComponent(returnToPath)}`;
@@ -249,7 +258,16 @@ const AppLayout: React.FC = () => {
 
         const crumbs = [{ label: 'Dashboard', path: homePath }];
         
-        pathnames.slice(1).forEach((value, index) => {
+        let segmentsToProcess = pathnames.slice(1);
+        if (
+            segmentsToProcess.length === 3 &&
+            segmentsToProcess[0] === 'team-management' &&
+            segmentsToProcess[1] === 'edit'
+        ) {
+            segmentsToProcess = segmentsToProcess.slice(0, 2);
+        }
+
+        segmentsToProcess.forEach((value, index) => {
             if (value === 'admin' || value.endsWith('-dashboard')) return;
 
             const to = `/app/${pathnames.slice(1, index + 2).join('/')}`;

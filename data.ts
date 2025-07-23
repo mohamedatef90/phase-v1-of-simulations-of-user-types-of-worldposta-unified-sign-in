@@ -1,5 +1,7 @@
 
 
+
+
 import type { User, UserGroup, Invoice, SupportTicket, LogEntry, SupportTicketProduct, InvoiceLineItem, StaffGroup } from './types';
 
 // Mock User Data
@@ -83,7 +85,11 @@ export const MOCK_USERS: { [email: string]: User & { passwordHash: string } } = 
     displayName: "SysAdmin",
     avatarUrl: "https://picsum.photos/seed/admin456/100/100",
     passwordHash: "hashedpassword_admin",
-    role: "admin"
+    role: "admin",
+    staffGroupId: "staffGroupAdmins",
+    status: 'active',
+    creationDate: '2023-01-15T10:00:00Z',
+    mfaEnabled: true,
   },
   "reseller@worldposta.com": {
     id: "reseller789",
@@ -93,7 +99,11 @@ export const MOCK_USERS: { [email: string]: User & { passwordHash: string } } = 
     displayName: "ResellerPro",
     avatarUrl: "https://picsum.photos/seed/reseller789/100/100",
     passwordHash: "hashedpassword_reseller",
-    role: "reseller"
+    role: "reseller",
+    staffGroupId: "staffGroupSupport",
+    status: 'suspended',
+    creationDate: '2023-02-20T11:30:00Z',
+    mfaEnabled: false,
   }
 };
 
@@ -142,6 +152,13 @@ export const MOCK_ADMIN_PERMISSIONS: string[] = [
     'access_system_settings',
     'impersonate_users'
 ];
+
+export const MOCK_ADMIN_ROLES = MOCK_ADMIN_PERMISSIONS.map(perm => ({
+    id: perm,
+    label: perm.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+    description: `Allows user to ${perm.replace(/_/g, ' ')}.`
+}));
+
 
 export const MOCK_STAFF_GROUPS: StaffGroup[] = [
     {

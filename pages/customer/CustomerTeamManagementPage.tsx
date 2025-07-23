@@ -329,10 +329,12 @@ export const CustomerTeamManagementPage: React.FC = () => {
                         onChange={(e) => setGroupFormData({ ...groupFormData, name: e.target.value })}
                         required
                         placeholder="e.g., Marketing Team, Project Managers"
-                        wrapperClassName="max-w-xl mx-auto"
+                        wrapperClassName="max-w-md"
+                        maxLength={50}
+                        hint="Maximum 50 characters."
                     />
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 border-t dark:border-gray-700 pt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Left Column: Available Roles */}
                         <div>
                             <h4 className="text-md font-semibold text-[#293c51] dark:text-gray-200 mb-2">Available Roles</h4>

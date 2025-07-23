@@ -14,6 +14,9 @@ export interface User {
   avatarUrl?: string; // URL to placeholder image
   teamManagerId?: string; // ID of the primary customer managing this user
   assignedGroupId?: string; // ID of the UserGroup this user belongs to
+  staffGroupId?: string; // ID of the StaffGroup this user belongs to
+  creationDate?: string;
+  mfaEnabled?: boolean;
 }
 
 export interface UserGroup {
@@ -36,7 +39,7 @@ export interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, pass: string, redirectPath?: string) => Promise<void>;
-  signup: (details: Omit<User, 'id' | 'avatarUrl' | 'displayName' | 'phoneNumber' | 'role' | 'teamManagerId' | 'assignedGroupId' | 'status'> & {password: string}) => Promise<void>;
+  signup: (details: Omit<User, 'id' | 'avatarUrl' | 'displayName' | 'phoneNumber' | 'role' | 'teamManagerId' | 'assignedGroupId' | 'status' | 'creationDate' | 'mfaEnabled'> & {password: string}) => Promise<void>;
   logout: () => void;
   updateProfile: (details: Partial<Pick<User, 'fullName' | 'companyName' | 'displayName' | 'phoneNumber'>>) => Promise<void>;
   changePassword: (oldPass: string, newPass: string) => Promise<void>;
