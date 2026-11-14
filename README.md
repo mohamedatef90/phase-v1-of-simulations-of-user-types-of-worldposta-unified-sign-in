@@ -10,7 +10,7 @@ An early (phase 1) front-end simulation of a unified sign-in portal and account 
   - Admin: user management, staff management (with role and status filters, group management), system settings, and an admin dashboard.
   - Reseller: customers, program, and a reseller dashboard.
 - **"View As":** an admin can view the customer navigation for a given user through the `viewAsUser` query parameter (`App.tsx`).
-- **Email subscription pricing page** (`/posta-pricing`) where yearly plans apply a 17% discount (`pages/billing/EmailAdminSubscriptionsPage.tsx`).
+- **Email subscriptions page** (`/app/billing/email-subscriptions`) where yearly plans apply a 17% discount (`pages/billing/EmailAdminSubscriptionsPage.tsx`), and a public Posta pricing route (`/posta-pricing`).
 - **CloudEdge layout** and dashboard views.
 - **Shared UI kit** in `components/ui/`.
 
